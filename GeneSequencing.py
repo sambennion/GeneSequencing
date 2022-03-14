@@ -22,13 +22,7 @@ MATCH = -3
 INDEL = 5
 SUB = 1
 
-class Cell(object):
-		cost = 0
-		direction = None
-		def __init__(self):
-			
-			Cell.cost = 0
-			Cell.direction = None
+
 
 class GeneSequencing:
 
