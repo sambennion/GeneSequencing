@@ -39,8 +39,45 @@ class GeneSequencing:
 # you whether you should compute a banded alignment or full alignment, and _align_length_ tells you
 # how many base pairs to use in computing the alignment
 
+	#Time complexity: O(n) where n is the length of the larger of seq1 and seq2
+	#Space Complexity: O(kn) as this uses an array of back_pointers size kn
+	def get_sequences_banded(self, back_pointers, seq1, seq2):
+		m = len(seq2)
+		n = len(seq1)
+		k = 2 * MAXINDELS + 1
+		j = k-4+n-m
 
-	def get_sequences(self, table, back_pointers, seq1, seq2):
+		
+
+		align1 = ""
+		align2 = ""
+
+
+		while m > 3:
+			if back_pointers[m][j] == "up":
+				align2 = seq2[m-1] + align2
+				align1 = "-" + align1
+				m = m - 1
+				j = j + 1
+			elif back_pointers[m][j] == "lef":
+				align1 = seq1[n-1] + align1
+				align2 = "-" + align2
+				j = j - 1
+				n = n - 1
+			else:
+				align1 = seq1[n-1] + align1
+				align2 = seq2[m-1] + align2
+				m = m - 1
+				n = n - 1
+		#This will just run 3 times because m <=3
+		begin_align1, begin_align2 = self.get_sequences(back_pointers, seq1[:n], seq2[:m])
+		#combine first 3 alignment with the rest of the alignment
+		align1 = begin_align1 + align1
+		align2 = begin_align2 + align2
+		return align1, align2
+
+
+	def get_sequences(self, back_pointers, seq1, seq2):
 		n = len(seq1)
 		m = len(seq2)
 		align1 = ""
@@ -95,7 +132,7 @@ class GeneSequencing:
 						back_pointers[i][j] = 'lef'
 					 
 					table[i][j] = min
-		align1, align2 = self.get_sequences(table, back_pointers, seq1, seq2)
+		align1, align2 = self.get_sequences(back_pointers, seq1, seq2)
 		# print(table)
 		# time.sleep(100)
 		return table[m][n], align1, align2 #final score
@@ -112,16 +149,17 @@ class GeneSequencing:
 			return math.inf, "No Alignment Possible", "No Alignment Possible"
 		offset = 0  #This will help find the start of string1
 		table = [[0 for i in range(k)] for j in range(m+1)] 
+		back_pointers  = [[0 for i in range(k)] for j in range(m+1)] 
+
+
 		for i in range(m + 1):
 
 			if i > 3:#this will keep track of the offset for the band and increment it
 				offset = offset + 1
 			for j in range(k):
 				#Set cell to inf if outside band for places where band is less than k.
-				if (i == 0 and j > 3) or (i == 1 and j > 4) or (i == 2 and j > 5) or (i == m and j > 4) or (i == m-1 and j > 5) or (j + offset > n):
-
+				if (i == 0 and j > 3) or (i == 1 and j > 4) or (i == 2 and j > 5) or (i == m and j > 4) or (i == m-1 and j > 5) or (j + offset > n): #honestly, I may have put too many conditions here, but it works.
 						# print("i = " + str(i) + " j = " + str(j) + " j + offset> n = " + str(j + offset> n))
-
 						table[i][j] = math.inf
 
 				elif i == 0 or j + offset == 0: #top or left-most column
@@ -138,85 +176,26 @@ class GeneSequencing:
 						min = table[i-1][j + left_shift_up - 1] + MATCH #diagnal cell - Last priority in case of tie
 					else:
 						min = table[i-1][j-1 + left_shift_up] + SUB
+					back_pointers[i][j] = 'di'
 					if j != k-1 and min >= table[i-1][j + left_shift_up] + INDEL: #top cell - Second priority in case of tie
 						min = table[i-1][j + left_shift_up] + INDEL
+						back_pointers[i][j] = 'up'
 
 					if j != 0 and min >= table[i][j-1] + INDEL: #left cell - Top priority in case of tie
 						min = table[i][j-1] + INDEL
+						back_pointers[i][j] = 'lef'
 					table[i][j] = min
 					# print(table)
-		align1, align2 = seq1, seq2
+		
+		align1, align2 = self.get_sequences_banded(back_pointers, seq1, seq2)
 		# print(table)
 		# time.sleep(100)
 		# if table[m][k-4] == -474:
 		# 	print(len(table))
 		# 	time.sleep(100)
-		if seq1 == "polynomial" and seq2 == "exponential":
-			print(table)
-		return table[m][k-4+n-m], align1, align2
 
-		# n = len(seq1)
-		# m = len(seq2)
-		# k = 2*MAXINDELS + 1 # k = 2d+1. This will be reassigned in the loop though, though this is typically what it will be
-		# if abs(n - m) > MAXINDELS: #exceeds maxindels
-		# 	return math.inf, "No Alignment Possible", "No Alignment Possible" 
+		return table[m][k-4+n-m], align1, align2 #k-4 seems to be the default if they are the same length. The n-m will change it based on how close together they are.
 
-
-		
-		# #O((n+1) * O(m+1)) or simply O(nm) space complexity
-		# table = [[0 for i in range(k)] for j in range(m+1)] 
-		# #Also O(nm) space complexity. I could've made each node in the table an object that contains a score and back_pointer, but it doesn't simplify it anymore.
-		# back_pointers  = [[0 for i in range(k)] for j in range(m+1)] #row space is only k in this case.
-		# # print(table)
-		# for i in range(m+1):
-		# 	# print(i)
-		# 	# if i < 4:#This is for the rows that will populate less than 7. 
-		# 	# 	k = MAXINDELS + 1 + i #Finaly, it will assign k to 3 + 1 + 3 = 7 = 2(3) + 1
-		# 	for j in range(k):
-		# 		# print(j)
-		# 		# print(m)
-		# 		# print((j + i*k)) 
-		# 		if (i == m-1 and j == j-1) or (i == m and j>=j-2) or (i == 0 and j > 3) or (i == 1 and j > 4) or (i == 2 and j > 5):
-		# 			table[i][j] = math.inf
-		# 			# print(table[i][j])
-		# 			# break
-		# 		if i == 0 or j + (k*i) == 0: #top or left-most column
-		# 			table[i][j] = (INDEL * i) + (INDEL * j)
-		# 			#up to here should work.
-		# 		else:
-		# 			match_offset = 0
-		# 			if i > 3:
-		# 				match_offset = i - 3
-		# 			# print((j) + match_offset)
-		# 			matched = seq1[(j) + match_offset] == seq2[i-1] #think this works
-		# 			#take the min score from the surrounding
-		# 			#back pointers are being set at each phase if the condition is matched, but only the last one sticks.
-		# 			banded_offset = 0
-		# 			if i > 3:
-		# 				banded_offset = 1
-
-		# 			if matched:
-		# 				min = table[i-1][j-1 + banded_offset] + MATCH #diagnal cell - Last priority in case of tie
-		# 			else:
-		# 				min = table[i-1][j-1 + banded_offset] + SUB
-
-		# 			back_pointers[i][j] = 'di'
-		# 			if min >= table[i-1][j + banded_offset] + INDEL: #top cell - Second priority in case of tie
-		# 				min = table[i-1][j + banded_offset] + INDEL
-		# 				back_pointers[i][j] = 'up'
-		# 			#No offset needed in this case
-		# 			if min >= table[i][j-1] + INDEL: #left cell - Top priority in case of tie
-		# 				min = table[i][j-1] + INDEL
-		# 				back_pointers[i][j] = 'lef'
-						
-		# 			table[i][j] = min
-		# 			# print(table[i][j])
-		# # align1, align2 = self.get_sequences(table, back_pointers, seq1, seq2)
-		# 	print(table)
-		# align1 = "123"
-		# align2 = "abc"
-		# return table[m][n], align1, align2 #final score
-				
 
 	
 
