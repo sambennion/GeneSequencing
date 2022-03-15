@@ -1,7 +1,6 @@
 #!/usr/bin/python3
-
+#I commented out tkinter because python wasn't running for me when this was included.
 # from tkinter.tix import MAX
-import time
 from operator import le
 from re import A
 
@@ -46,8 +45,6 @@ class GeneSequencing:
 		n = len(seq1)
 		k = 2 * MAXINDELS + 1
 		j = k-4+n-m
-
-		
 
 		align1 = ""
 		align2 = ""
@@ -188,11 +185,7 @@ class GeneSequencing:
 					# print(table)
 		
 		align1, align2 = self.get_sequences_banded(back_pointers, seq1, seq2)
-		# print(table)
-		# time.sleep(100)
-		# if table[m][k-4] == -474:
-		# 	print(len(table))
-		# 	time.sleep(100)
+
 
 		return table[m][k-4+n-m], align1, align2 #k-4 seems to be the default if they are the same length. The n-m will change it based on how close together they are.
 
@@ -207,9 +200,7 @@ class GeneSequencing:
 		seq2 = seq2[0:align_length]
 		n = len(seq1)
 		m = len(seq2)
-		# print(n)
-		# print(m)
-		# opt = [[0 for i in range(n+1)] for j in range(m+1)]
+
 		score = 0
 		if not banded:
 			score, alignment1, alignment2 = self.unrestricted(seq1, seq2)
@@ -218,20 +209,7 @@ class GeneSequencing:
 
 		alignment1 = alignment1[0:100]
 		alignment2 = alignment2[0:100]
-		# print("Score = " + str(score))
-		
-	
 
-
-		
-###################################################################################################
-# your code should replace these three statements and populate the three variables: score, alignment1 and alignment2
-		# score = random.random()*100
-		# alignment1 = 'abc-easy  DEBUG:({} chars,align_len={}{})'.format(
-		# 	len(seq1), align_length, ',BANDED' if banded else '')
-		# alignment2 = 'as-123--  DEBUG:({} chars,align_len={}{})'.format(
-		# 	len(seq2), align_length, ',BANDED' if banded else '')
-###################################################################################################
 
 		return {'align_cost':score, 'seqi_first100':alignment1, 'seqj_first100':alignment2}
 	
